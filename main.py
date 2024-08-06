@@ -27,6 +27,23 @@ guild_id = os.getenv("GUILD_ID")
 application_id = os.getenv("APPLICATION_ID")
 
 
+@app.get("/app-emojis-plain")
+def get_app_emojis_plain():
+    application_id = os.getenv("APPLICATION_ID")
+    url = f"https://discord.com/api/v10/applications/{application_id}/emojis"
+    headers = {
+        "Authorization": f"Bot {discord_token}"
+    }
+
+    response = requests.get(url, headers=headers)
+    
+    if response.status_code == 200:
+        emojis = response.json().get("items", [])
+        formatted_emojis = "\n".join([f"<:{emoji['name']}:{emoji['id']}>" for emoji in emojis])
+        return formatted_emojis
+    else:
+        return "Error al obtener la lista de emojis."
+
 @app.get("/app-emojis")
 def get_app_emojis():
      
