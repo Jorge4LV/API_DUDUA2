@@ -1,11 +1,12 @@
 import discord
 from discord.ext import commands
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, HTTPException
 from pydantic import BaseModel
 import json
 import asyncio
 import uvicorn
 import os
+import requests
 from Config.Funciones.registrar import registrar_rutas_desde_directorio
 from Config.Funciones.datos_json import load_data
 from Config.Funciones.guardar_json import save_data
@@ -21,6 +22,24 @@ intents.members = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 app = FastAPI()
 
+discord_token = os.getenv("DISCORD_TOKEN")
+guild_id = os.getenv("GUILD_ID")
+
+# Endpoint para obtener la lista de emojis
+@app.get("/emojis")
+def get_emojis():
+    url = f"https://discord.com/api/v10/guilds/{guild_id}/emojis"
+    headers = {
+        "Authorization": f"Bot {discord_token}"
+    }
+
+    response = requests.get(url, headers=headers)
+    
+    if response.status_code == 200:
+        emojis = response.json()
+        return emojis  # Devuelve la lista de emojis como JSON
+    else:
+        raise HTTPException(status_code=response.status_code, detail="Failed to fetch emojis")
 
 
 @bot.event
@@ -51,32 +70,21 @@ async def on_raw_reaction_remove(payload):
                 await member.remove_roles(role)
                 print(f"Removed {role.name} from {member.name}")
 
-
-
+# Endpoint para obtener la lista de roles desde un archivo JSON
 @app.get("/roles")
 def read_roles():
     return load_data()
 
-
-
-
-
-
-
+# Registrar rutas adicionales
 carpeta_api = os.path.join(os.path.dirname(__file__), 'Config')
 router_principal = APIRouter()
 registrar_rutas_desde_directorio(router_principal, carpeta_api)
 app.include_router(router_principal)
 
-
 def run_api():
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
-
-
-discord_token = os.getenv("DISCORD_TOKEN")
-# h
-
+# Función principal para ejecutar el bot y la API en paralelo
 async def main():
     await asyncio.gather(
         asyncio.to_thread(run_api),
@@ -84,4 +92,3 @@ async def main():
     )
 
 asyncio.run(main())
-
