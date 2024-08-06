@@ -25,7 +25,6 @@ app = FastAPI()
 discord_token = os.getenv("DISCORD_TOKEN")
 guild_id = os.getenv("GUILD_ID")
 
-# Endpoint para obtener la lista de emojis
 @app.get("/emojis")
 def get_emojis():
     url = f"https://discord.com/api/v10/guilds/{guild_id}/emojis"
@@ -37,7 +36,13 @@ def get_emojis():
     
     if response.status_code == 200:
         emojis = response.json()
-        return emojis  # Devuelve la lista de emojis como JSON
+        filtered_emojis = [{"name": emoji["name"], "id": emoji["id"]} for emoji in emojis]
+        
+        # Guardar la información en un archivo JSON
+        with open("emojis_data.json", "w") as file:
+            json.dump(filtered_emojis, file, indent=4)
+        
+        return filtered_emojis  # También devuelve la información a la API
     else:
         raise HTTPException(status_code=response.status_code, detail="Failed to fetch emojis")
 
