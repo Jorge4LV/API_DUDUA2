@@ -87,6 +87,49 @@ def get_emojis():
     else:
         raise HTTPException(status_code=response.status_code, detail="Failed to fetch emojis")
 
+# Endpoint para obtener un GIF aleatorio
+@app.get("/gifs/random")
+def get_random_gif():
+    """
+    Devuelve un GIF aleatorio desde un archivo JSON.
+    """
+    try:
+        # Cargar datos desde el archivo JSON
+        with open("gifs_data.json", "r") as file:
+            gifs_data = json.load(file)
+        
+        if not gifs_data.get("gifs", []):
+            raise HTTPException(status_code=404, detail="No GIFs available.")
+        
+        # Seleccionar un GIF aleatorio
+        random_gif = random.choice(gifs_data["gifs"])
+        return {
+            "url": random_gif["url"],
+            "name": random_gif["name"],
+            "description": random_gif.get("description", "No description available.")
+        }
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail="GIF data file not found.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Endpoint para listar todos los GIFs
+@app.get("/gifs")
+def list_all_gifs():
+    """
+    Devuelve una lista de todos los GIFs disponibles desde un archivo JSON.
+    """
+    try:
+        # Cargar datos desde el archivo JSON
+        with open("gifs_data.json", "r") as file:
+            gifs_data = json.load(file)
+        
+        return gifs_data.get("gifs", [])
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail="GIF data file not found.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @bot.event
 async def on_raw_reaction_add(payload):
