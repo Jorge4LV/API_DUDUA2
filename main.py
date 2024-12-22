@@ -6,6 +6,7 @@ import json
 import asyncio
 import uvicorn
 import os
+import random
 import requests
 from Config.Funciones.registrar import registrar_rutas_desde_directorio
 from Config.Funciones.datos_json import load_data
@@ -87,22 +88,26 @@ def get_emojis():
     else:
         raise HTTPException(status_code=response.status_code, detail="Failed to fetch emojis")
 
-# Endpoint para obtener un GIF aleatorio
-@app.get("/gifs/random")
-def get_random_gif():
+
+# Endpoint para obtener un GIF aleatorio por tipo de reacción
+@app.get("/gifs/{reaction_type}")
+def get_gif_by_reaction(reaction_type: str):
     """
-    Devuelve un GIF aleatorio desde un archivo JSON.
+    Devuelve un GIF aleatorio de un tipo específico de reacción.
     """
     try:
         # Cargar datos desde el archivo JSON
         with open("gifs_data.json", "r") as file:
             gifs_data = json.load(file)
         
-        if not gifs_data.get("gifs", []):
-            raise HTTPException(status_code=404, detail="No GIFs available.")
+        # Filtrar GIFs por tipo de reacción
+        filtered_gifs = [gif for gif in gifs_data.get("gifs", []) if gif.get("type") == reaction_type]
         
-        # Seleccionar un GIF aleatorio
-        random_gif = random.choice(gifs_data["gifs"])
+        if not filtered_gifs:
+            raise HTTPException(status_code=404, detail=f"No GIFs found for reaction type '{reaction_type}'.")
+        
+        # Seleccionar un GIF aleatorio de los filtrados
+        random_gif = random.choice(filtered_gifs)
         return {
             "url": random_gif["url"],
             "name": random_gif["name"],
@@ -114,22 +119,34 @@ def get_random_gif():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# Endpoint para listar todos los GIFs
+# Endpoint para listar los tipos de reacciones disponibles
 @app.get("/gifs")
-def list_all_gifs():
+def list_gif_reaction_types():
     """
-    Devuelve una lista de todos los GIFs disponibles desde un archivo JSON.
+    Devuelve una lista de tipos de reacciones disponibles (endpoints únicos).
     """
     try:
         # Cargar datos desde el archivo JSON
         with open("gifs_data.json", "r") as file:
             gifs_data = json.load(file)
         
-        return gifs_data.get("gifs", [])
+        # Extraer los tipos de reacción únicos
+        reaction_types = sorted(set(gif.get("type") for gif in gifs_data.get("gifs", [])))
+        
+        if not reaction_types:
+            raise HTTPException(status_code=404, detail="No reaction types available.")
+        
+        # Devolver los tipos de reacciones como endpoints
+        return {
+            "endpoints": [f"/gifs/{reaction}" for reaction in reaction_types]
+        }
     except FileNotFoundError:
         raise HTTPException(status_code=500, detail="GIF data file not found.")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+
 
 @bot.event
 async def on_raw_reaction_add(payload):
