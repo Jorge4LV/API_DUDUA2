@@ -1,0 +1,19 @@
+{
+  "gifs": [
+    {
+      "url": "https://i.ibb.co/tHYf7Zt/Hug-29.gif",
+      "name": "Happy",
+      "description": "A happy reaction GIF."
+    },
+    {
+      "url": "https://i.ibb.co/tHYf7Zt/Hug-28.gif",
+      "name": "Sad",
+      "description": "A sad reaction GIF."
+    },
+    {
+      "url": "https://i.ibb.co/FXwJQCP/Hug-27.gif",
+      "name": "Angry",
+      "description": "An angry reaction GIF."
+    }
+  ]
+}
